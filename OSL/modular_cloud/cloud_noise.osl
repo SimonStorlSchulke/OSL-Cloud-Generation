@@ -1,0 +1,88 @@
+float fbm(point p, int octaves, float lacunarity, float gain, float t) {
+    
+    float v = 0;
+    float amp = 0.5;
+    point pp = p;
+    
+    for (int i = 0; i < octaves; i++) {
+        v += amp * noise("simplex", pp, t);
+        pp *= lacunarity;
+        amp *= gain;
+    }
+
+    return v;
+}
+
+float voronoi(point tx) {
+    point thiscell = floor(tx);
+    float dist2nearest = 1000;
+    int i,j,k;
+    for(i = -1; i <= 1; i += 1)
+       for(j = -1; j <= 1; j += 1)
+           for(k = -1; k <= 1; k += 1) {
+              point testcell = thiscell + vector(i,j,k);
+              point pos = testcell + noise("cell", testcell) - 0.5;
+              float dist = distance(pos, tx);
+              if(dist < dist2nearest)
+                 dist2nearest = dist;
+              }
+    return dist2nearest;
+}
+
+float fbm_worley(point p, int octaves, float lacunarity, float gain) {
+
+    point tx = p;
+    float v = 0;
+    float amp = 0.5;
+    
+    for (int i = 0; i < octaves; i++) {
+        v += amp * (voronoi(tx));
+        tx *= lacunarity;
+        amp *= gain;
+    }
+    return v;
+}
+
+shader node_cloud_noise (
+    float OverallScale = 2,     //overall scale of the texture
+    float NoiseScale = 1,       //Multiplier of scale used by noise
+    float WorleyClump = 0.1,    //
+    int WorleyLayers = 2,       //Number of Worley FBM Octaves
+    int NoiseOctaves = 5,       //Number of Simplex FBM Octaves
+    point tx = P,               //Texture Coordinates (needed because of Blender Bug)
+    float NoiseGain = 0.5,      //Noise Gain - "Whisp" Factor
+    float NoiseInfluence = 0.5, //How much Simplex influences the texture
+    float Worleyfluence = 0.5,  //How much Worley influences the texture
+    float WorleySine = 0.0,     //Mix Worley/Sine texture
+    point position = 0,         //Noise Position
+    point WindDirection = 0,    //Direction Noise moves with time
+    float WindStrength = 0,     //How directional is the Noise Movement?
+    float stationary = 0.5,     //How much does the Noise move with the Base Object?
+    float Time = 0,             //Time factor to be animated
+    output float resultF = 0,   //Noise output - to be connected to the "Cloud Main" Node
+)
+{
+    point loc = 0; //object location
+    getattribute("object:location", loc);
+
+    float noise4thD =  Time*(1-WindStrength);
+    point pos = tx + position - loc*stationary -WindDirection*WindStrength;
+
+    float perlin = NoiseInfluence * fbm(pos * OverallScale*NoiseScale,
+                                        NoiseOctaves,
+                                        2,
+                                        NoiseGain, 
+                                        noise4thD);
+
+    float worley = fbm_worley(tx * OverallScale, WorleyLayers, 2, .5) 
+                    * Worleyfluence - 1;
+
+
+    float sine = sin(tx[0]*OverallScale*5 + 6 * mix(1, noise("simplex", tx*NoiseScale, Worleyfluence), 1));
+    float perlinWorley = perlin + mix(worley, sine, WorleySine*WorleySine) + 2;
+
+    //float blur = (clump + 0.5) * 1.5;
+
+    resultF = pow(perlinWorley, WorleyClump+1);
+    //resultF = sine;
+}

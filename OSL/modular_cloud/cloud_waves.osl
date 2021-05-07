@@ -1,0 +1,23 @@
+
+float wave(point p) {
+	
+    float n = 0.0;
+	n = (p[0] + p[1] + p[2]) * 10.0;
+    return 0.5 + 0.5 * sin(n);
+}
+
+shader cloud_waves (
+    float scale = 2,
+    float power = 1,
+    float rotation = 0,
+    float distMap = 0,
+    float dist = 0.5,
+    output float resultF = 0,
+)
+{
+    point p = P*scale;
+    p[0] -= distMap * dist;
+    float waves = sin(p[0]) + 1;
+    //p[0] += distMap * dist;
+    resultF = waves;
+}

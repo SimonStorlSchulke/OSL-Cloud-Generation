@@ -1,0 +1,19 @@
+float remap(float in, float lIn, float hIn) {
+    return (in - lIn) / (hIn - lIn);
+}
+
+
+shader cloud_falloff (
+    float input = 0,
+    float top = 0,
+    float bot = 0,
+    float strength = .5,
+    point TextureCoordinates = 0,
+    output float falloff = 0,
+    output float t2 = 0
+)
+{
+    float t = remap(TextureCoordinates[2], bot, top);
+    falloff = mix(1-strength, input, clamp(t, 0, 1));
+    t2 = t;
+}

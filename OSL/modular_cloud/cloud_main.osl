@@ -1,0 +1,34 @@
+float shape(point T, float ShapeGradient, float offsetMap, float offsetFac) {
+    T = 2*T - 1;
+    return -offsetMap * offsetFac + ShapeGradient + offsetFac - T[0]*T[0] - T[1]*T[1];
+}
+
+shader node_cloud_main (
+    float CloudScale = 1,
+    float density = 20,
+    float ShapeGradient = 1,
+    float DistortionNoise = 0,
+    float Distortion = 0.5,
+    float DissolveNoise = 0,
+    float Dissolve = .2,
+    vector TextureCoordinates = 0,
+    output float resultF = 1,
+    output float preview2D = 0
+    ) 
+    {
+    point loc = 0; //object location
+    getattribute("object:location", loc);
+
+    point tx = P - loc;
+
+
+    //If connected, use Texture Coordinates
+    if(TextureCoordinates != 0) {
+        tx = TextureCoordinates;
+    }
+
+    //resultF = shape(tx, CloudScale, ShapeGradient) - clamp(dissolveMap, 0, 10) * dissolve;
+    resultF = shape(tx, ShapeGradient, DistortionNoise + CloudScale, Distortion) - clamp(DissolveNoise-1+Dissolve, 0, 1) * Dissolve;
+    resultF *=  density;
+    //preview2D = shape(tx * vector(1,0,1), CloudScale, ShapeGradient) - clamp(dissolveMap, 0, 10) * dissolve;
+}

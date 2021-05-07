@@ -1,0 +1,35 @@
+float dist2cell(float freq) {
+    point pp = P*freq;
+    point thiscell = point(floor(pp[0]) + 0.5,
+                           floor(pp[1]) + 0.5,
+                           floor(pp[2]) + 0.5);
+    float dist2nearest = 1000;
+    int i,j,k;
+    for(i = -1; i <= 1; i += 1)
+       for(j = -1; j <= 1; j += 1)
+           for(k = -1; k <= 1; k += 1) {
+              point testcell = thiscell + vector(i,j,k);
+              point pos = testcell + noise("cell", testcell) - 0.5;
+              float dist = distance(pos, pp);
+              if(dist < dist2nearest)
+                 dist2nearest = dist;
+              }
+    return dist2nearest;
+}
+//Source checken!
+
+/*
+- Radius hardcoden auf 0.1 - blur regelt "Puffyness"
+*/
+
+shader cellular(
+    float scale = 1,
+    float clump = 0.1,
+    float distMap = 0,
+    float dist = 0.5,
+    output float resultF = 0)
+{
+    float d = mix(dist2cell(scale), dist2cell(scale * (distMap + 1)), dist);
+    float blur = (clump + 0.5) * 1.5; 
+    resultF = 2 * smoothstep(0.1, 0.1 + blur, d) - 1 ;
+}

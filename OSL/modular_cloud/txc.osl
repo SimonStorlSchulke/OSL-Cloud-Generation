@@ -1,0 +1,7 @@
+shader txc (
+    output vector resultV = 0,
+ 
+)
+{
+    getattribute("geom:generated", resultV);
+}
